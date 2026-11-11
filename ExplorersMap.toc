@@ -1,0 +1,30 @@
+## Interface: 16001
+## Title: |cff5cc8ffExplorers|rMap
+## Notes: A pin on every area you still have to discover, zone by zone, your exploration of all Azeroth at a glance, and a guide to what to explore at your level. /emap
+## Notes-esES: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
+## Notes-esMX: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
+## Version: 1.1.0
+## SavedVariables: ExplorersMapDB
+## OptionalDeps: OpenMap
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+## Category: Map
+## X-Category: Map
+
+Locales.lua
+
+# Languages: one file each. To add yours, fill in a custom slot (see Languages\eng.lua),
+# or add a file of your own to the folder and its name to this list.
+Languages\eng.lua
+Languages\esp.lua
+Languages\custom1.lua
+Languages\custom2.lua
+Languages\custom3.lua
+
+Data.lua
+ZoneInfo.lua
+Core.lua
+Pins.lua
+Minimap.lua
+UI.lua
+Guide.lua
+Settings.lua

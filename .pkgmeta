@@ -1,0 +1,6 @@
+package-as: ExplorersMap
+ignore:
+  - tools
+  - tests
+  - media
+  - README.md

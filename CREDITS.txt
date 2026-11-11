@@ -1,0 +1,18 @@
+ExplorersMap - credits for the data it ships
+
+Map pieces (which parts of each zone's map exploring reveals):
+  from OpenMap's reveal data, built from the game's own tables.
+  https://github.com/openmap-world/openmap  (MIT, see LICENSES/OpenMap-LICENSE.txt)
+
+Area names in English and Spanish:
+  from LibBabble-SubZone-3.0 by Arith Hsu.
+  https://github.com/arithmandar/LibBabble-SubZone-3.0  (MIT, see LICENSES/LibBabble-SubZone-3.0-LICENSE.txt)
+
+Texture names used to match map pieces to areas:
+  the community listfile, https://github.com/wowdev/wow-listfile
+
+Zone level ranges and faction ownership (the Guide):
+  as listed by the addon Zone Info: Forever and the Warcraft Wiki's "Zones by level" page.
+
+World of Warcraft and its map data are the property of Blizzard Entertainment.
+ExplorersMap is a fan-made addon, not affiliated with or endorsed by Blizzard.

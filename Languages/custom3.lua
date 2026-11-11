@@ -1,0 +1,3 @@
+-- ExplorersMap: a free slot for a language of your own (custom3.lua).
+-- Paste a copy of eng.lua's ExplorersMap_Language({ ... }) block below, give it its own code and
+-- name, translate the texts, and restart the game. eng.lua explains it step by step.

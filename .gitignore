@@ -1,0 +1,7 @@
+# the tools' work folder and their intermediate files
+work/
+*.json
+__pycache__/
+*.pyc
+# packaged releases
+*.zip

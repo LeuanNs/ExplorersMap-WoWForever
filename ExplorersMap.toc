@@ -3,7 +3,7 @@
 ## Notes: A pin on every area you still have to discover, zone by zone, your exploration of all Azeroth at a glance, and a guide to what to explore at your level. /emap
 ## Notes-esES: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
 ## Notes-esMX: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
-## Version: 1.1.0
+## Version: 1.2.0
 ## SavedVariables: ExplorersMapDB
 ## OptionalDeps: OpenMap
 ## IconTexture: Interface\Icons\INV_Misc_Map_01

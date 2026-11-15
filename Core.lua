@@ -13,7 +13,7 @@ ns.total, ns.done = 0, 0
 local T = ns.T
 
 local DEFAULTS = { lang = "eng", pins = true, zoneOnly = false, minimap = true, angle = 215, sort = 1, announce = true,
-	colorMode = "single", color = 1, size = 2 }
+	colorMode = "single", color = 1, size = 2, continentOnly = false, showFound = false, hideDungeons = false }
 ns.PALETTE = { { 0.45, 0.72, 1 }, { 1, 0.82, 0.2 }, { 0.5, 0.95, 0.4 }, { 1, 0.38, 0.32 }, { 0.82, 0.55, 1 }, { 1, 0.6, 0.2 }, { 1, 1, 1 } }
 ns.REGION_COLORS = { { 1, 0.6, 0.2 }, { 0.45, 0.72, 1 }, { 0.82, 0.55, 1 } }                 -- Kalimdor, Eastern Kingdoms, islands
 ns.RISK_COLORS = { { 0.4, 0.9, 0.45 }, { 1, 0.85, 0.25 }, { 1, 0.55, 0.2 }, { 1, 0.3, 0.3 } }  -- safe, your level, risky, deadly
@@ -312,6 +312,8 @@ events:SetScript("OnEvent", function(_, event, arg)
 	else
 		if event == "PLAYER_ENTERING_WORLD" then ns.quietUntil = GetTime() + 8 end
 		ns.QueueScan(event == "PLAYER_ENTERING_WORLD" and 1.5 or 0.4)
+		-- (the pins may depend on where the character is: its zone, its continent, a dungeon)
+		if event ~= "MAP_EXPLORATION_UPDATED" then ns.Notify("zone") end
 	end
 end)
 for _, event in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "MAP_EXPLORATION_UPDATED",

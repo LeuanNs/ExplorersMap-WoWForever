@@ -2,7 +2,8 @@
 -- one chosen (the area that may unlock it; a discovered area chosen in the window shows too, in
 -- green). The pins are frames on the map's canvas, kept the same size on screen at any zoom. On
 -- OpenMap's stitched map they go through OpenMapAPI, so every zone's pins show; on Blizzard's own
--- map, the zone's (or, on a continent, its zones'). Settings: which maps, the size, the colours.
+-- map, the zone's (or, on a continent, its zones'). Settings: which zones (all, the continent the
+-- character is on, the zone it is in), the discovered ones too, none in a dungeon, size, colours.
 
 local _, ns = ...
 local T = ns.T
@@ -10,9 +11,9 @@ local T = ns.T
 local SIZES = { 18, 24, 30 }    -- px on screen: small, medium, large
 local ATLAS, FALLBACK = "Waypoint-MapPin-Untracked", "Interface\\Minimap\\Ping\\ping5"
 local GOLD, GREEN = { 1, 0.82, 0.2 }, { 0.4, 0.95, 0.5 }
+local FOUND_ALPHA = 0.8         -- a discovered area's pin (green), when the settings show them
 local SEGMENTS = 48             -- the circle's
 local MIN_RING = 18             -- px on screen: the circle's radius at least (10 m is a pixel or two on a zone's map)
-local ZONE_ZOOM = 3             -- OpenMap's zoom from which a zone counts as "its own map"
 
 local canvas, host, ring, driver
 local pool, active = {}, {}
@@ -37,30 +38,23 @@ local function Stitched()
 end
 
 -- a function that places a point of a zone's map (0..1) on the canvas (0..1 of the map showing,
--- and past it); how big the pins are at this view (0..1); and, with "only on zone maps", the one
--- zone whose pins show (false: none). nil when this map takes no pins
+-- and past it), and how big the pins are at this view (0..1). nil when this map takes no pins
 local function Mapper()
 	local mapID = WorldMapFrame:GetMapID()
 	if not mapID then return end
-	local zoneOnly = ExplorersMapDB.zoneOnly
 	if Stitched() then
 		local OM = OpenMapAPI
 		local u, v, zoom = OM.GetView()
 		zoom = tonumber(zoom) or 4
-		local only
-		if zoneOnly then
-			local here = zoom >= ZONE_ZOOM and OM.MapAt and u and v and OM.MapAt(u, v)
-			only = here and ns.byMap[here] or false
-		end
 		return function(zone, x, y)
 			local wu, wv = OM.WorldFromMap(zone.mapID, x, y)
 			if not wu then return end
 			return OM.MapFromWorld(mapID, wu, wv)
-		end, math.max(0.4, math.min(1, zoom / 5)), only
+		end, math.max(0.4, math.min(1, zoom / 5))
 	end
 	local shown = ns.byMap[mapID]
 	if shown then
-		return function(zone, x, y) if zone == shown then return x, y end end, 1, nil
+		return function(zone, x, y) if zone == shown then return x, y end end, 1
 	end
 	local info = C_Map.GetMapInfo(mapID)
 	local continent = Enum and Enum.UIMapType and Enum.UIMapType.Continent or 2
@@ -75,7 +69,25 @@ local function Mapper()
 			rects[zone] = r
 		end
 		if r then return r[1] + x * (r[2] - r[1]), r[3] + y * (r[4] - r[3]) end
-	end, 0.6, zoneOnly and false or nil
+	end, 0.6
+end
+
+-- in a dungeon or a raid (where another addon may be drawing the place's own map)
+local function InDungeon()
+	if type(IsInInstance) ~= "function" then return false end
+	local ok, inside, kind = pcall(IsInInstance)
+	return ok and inside and (kind == "party" or kind == "raid") or false
+end
+
+-- which zones' pins the settings let show: fn(zone) -> bool (nil: none at all)
+local function Filter()
+	local db = ExplorersMapDB
+	if db.hideDungeons and InDungeon() then return end
+	if not (db.zoneOnly or db.continentOnly) then return function() return true end end
+	local here = ns.CurrentZone()
+	if db.zoneOnly then return function(zone) return zone == here end end
+	-- (somewhere no zone is known: every continent's)
+	return function(zone) return not here or zone.c == here.c end
 end
 
 local function OnEnter(self)
@@ -179,10 +191,11 @@ local function Layout()
 		active[i] = nil
 	end
 	ring:Hide()
-	local showAll = ExplorersMapDB.pins
+	local wanted = ExplorersMapDB.pins and Filter() or nil
+	local showFound = ExplorersMapDB.showFound
 	local selected = ns.selected
-	if not showAll and not selected then return end
-	local place, size, only = Mapper()
+	if not wanted and not selected then return end
+	local place, size = Mapper()
 	if not place then return end
 	local width, height = canvas:GetWidth(), canvas:GetHeight()
 	local onScreen = canvas:GetEffectiveScale() / UIParent:GetEffectiveScale()   -- canvas units -> px
@@ -192,22 +205,26 @@ local function Layout()
 	host:SetFrameLevel(level)
 	ring:SetFrameLevel(level + 1)
 	for _, zone in ipairs(ns.zones) do
-		local all = showAll and (only == nil or only == zone) and zone.done < zone.total
+		local all = wanted and wanted(zone) and (showFound or zone.done < zone.total)
 		if all or (selected and selected.zone == zone) then
 			for _, p in ipairs(zone.pieces) do
 				local chosen = p == selected
-				if chosen or (all and not p.explored) then
+				if chosen or (all and (showFound or not p.explored)) then
 					local ok, cx, cy = pcall(place, zone, p.x, p.y)
 					if ok and cx and cy and cx > -1 and cx < 2 and cy > -1 and cy < 2 then
 						local b = tremove(pool) or NewPin()
 						local scale = size * (chosen and 1.3 or 1) / onScreen
 						b.piece = p
+						b.icon:SetAlpha(1)
 						if chosen then
 							local c = p.explored and GREEN or GOLD
 							b.icon:SetVertexColor(c[1], c[2], c[3])
 							local ok2, ex = pcall(place, zone, p.x + p.r, p.y)
 							local radius = ok2 and ex and math.abs(ex - cx) * width or 0
 							PlaceRing(cx, cy, math.max(radius, MIN_RING / onScreen), 2 / onScreen, c)
+						elseif p.explored then
+							b.icon:SetVertexColor(GREEN[1], GREEN[2], GREEN[3])
+							b.icon:SetAlpha(FOUND_ALPHA)
 						else
 							b.icon:SetVertexColor(ns.PinColor(p))
 						end

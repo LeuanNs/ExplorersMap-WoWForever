@@ -99,9 +99,19 @@ pins=L.eval('''function(ns, stitched)
   ns.SetPins(false) driver._scripts.OnUpdate(driver,0.2) out[#out+1]="off:"..count()
   local found for _,p in ipairs(ns.byMap[1413].pieces) do if p.explored then found=p end end
   ns.Select(found) driver._scripts.OnUpdate(driver,0.2) out[#out+1]="off+found:"..count() ns.Select(nil) ns.SetPins(true)
-  ExplorersMapDB.zoneOnly=true
-  for _,id in ipairs({1413,1414}) do WorldMapFrame._mapID=id driver._scripts.OnShow(driver) driver._scripts.OnUpdate(driver,0.2) out[#out+1]="zoneOnly "..id..":"..count() end
-  ExplorersMapDB.zoneOnly=false
+  local db=ExplorersMapDB
+  local show=function(label,ids) for _,id in ipairs(ids) do WorldMapFrame._mapID=id driver._scripts.OnShow(driver) driver._scripts.OnUpdate(driver,0.2) out[#out+1]=label.." "..id..":"..count() end end
+  -- the character is in the Barrens (1413, Kalimdor); 1429 is Elwynn (Eastern Kingdoms)
+  db.zoneOnly=true show("zoneOnly",{1413,1414,1429})
+  C_Map.GetBestMapForUnit=function() return 1429 end ns.Notify("zone") driver._scripts.OnUpdate(driver,0.2) out[#out+1]="moved to elwynn:"..count()
+  C_Map.GetBestMapForUnit=function() return 1413 end
+  db.zoneOnly=false db.continentOnly=true show("continentOnly",{1413,1414,1429})
+  db.continentOnly=false db.showFound=true show("showFound",{1413})
+  local green=0 for _,w in ipairs(MOCK.widgets) do if w._kind=="Button" and w.piece and w._shown and w.piece.explored then green=green+1 end end out[#out+1]="found pins:"..green
+  db.showFound=false db.hideDungeons=true
+  IsInInstance=function() return 1,"party" end show("in dungeon",{1413})
+  IsInInstance=function() return nil,"none" end show("outside",{1413})
+  db.hideDungeons=false
   for _,mode in ipairs({"region","level","single"}) do ExplorersMapDB.colorMode=mode ns.Notify("settings") driver._scripts.OnUpdate(driver,0.2) end
   return table.concat(out," ")
 end''')

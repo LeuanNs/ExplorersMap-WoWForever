@@ -20,7 +20,7 @@ ExplorersMap knows every area that exploring reveals on each zone's map (569 are
 **The window** (minimap button or `/emap`)
 - **Progress:** how much of the world you have explored, by continent and by zone. Pick a zone to see the areas still to discover and the ones already found; click any of them to open the map there. The window opens on the zone you are standing in.
 - **Guide:** the zones with areas left, sorted by how they suit your level and faction (explore now, with care, later), and the hardest and slowest zones to finish, with the reasons.
-- **Settings:** language, pins on or off, pins only on zone maps, pin size, the minimap button, discovery announcements, and pin colours (one colour, by region, or by the zone's risk at your level).
+- **Settings:** language, pins on or off, pins only for the zone or the continent you are in, discovered areas shown too (in green), pins hidden in dungeons and raids, pin size, the minimap button, discovery announcements, and pin colours (one colour, by region, or by the zone's risk at your level).
 
 **Discoveries**: the area's name shows on screen with the zone's count and your world percentage, and a line goes to chat.
 

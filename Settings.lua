@@ -1,5 +1,6 @@
 -- ExplorersMap: the window's Settings page. Language (every language the Languages folder
--- adds), the map pins (shown or not, only on zone maps, the minimap button, the chat lines),
+-- adds), the map pins (shown or not, only the zone or the continent the character is in, the
+-- discovered ones too, hidden in dungeons, the minimap button, the announcements),
 -- their size, and their colours: one colour, by region, or by the zone's risk at your level.
 
 local _, ns = ...
@@ -71,6 +72,12 @@ local function Build(page)
 	Box("OPT_PINS", 20, -132, 450, function() return ExplorersMapDB.pins end, function(on) ns.SetPins(on) end)
 	Box("OPT_ZONEONLY", 20, -156, 450, function() return ExplorersMapDB.zoneOnly end,
 		function(on) ExplorersMapDB.zoneOnly = on end)
+	Box("OPT_CONTINENT", 20, -180, 450, function() return ExplorersMapDB.continentOnly end,
+		function(on) ExplorersMapDB.continentOnly = on end)
+	Box("OPT_FOUND", 20, -204, 450, function() return ExplorersMapDB.showFound end,
+		function(on) ExplorersMapDB.showFound = on end)
+	Box("OPT_DUNGEONS", 490, -180, 268, function() return ExplorersMapDB.hideDungeons end,
+		function(on) ExplorersMapDB.hideDungeons = on end)
 	Box("OPT_MINIMAP", 490, -132, 268, function() return ExplorersMapDB.minimap ~= false end, function(on)
 		ExplorersMapDB.minimap = on
 		if ns.RefreshMinimapButton then ns.RefreshMinimapButton() end
@@ -79,7 +86,7 @@ local function Build(page)
 		function(on) ExplorersMapDB.announce = on end)
 
 	-- their size
-	page.sizeHead = Heading(page, -194)
+	page.sizeHead = Heading(page, -242)
 	page.sizes = {}
 	for i = 1, 3 do
 		local b = Choice(page, 118, function(self)
@@ -87,12 +94,12 @@ local function Build(page)
 			Changed()
 		end)
 		b.size = i
-		b:SetPoint("TOPLEFT", 20 + (i - 1) * 124, -222)
+		b:SetPoint("TOPLEFT", 20 + (i - 1) * 124, -270)
 		page.sizes[i] = b
 	end
 
 	-- their colours
-	page.colorHead = Heading(page, -264)
+	page.colorHead = Heading(page, -312)
 	page.modes = {}
 	for i, mode in ipairs(MODES) do
 		local b = Choice(page, 118, function(self)
@@ -100,14 +107,14 @@ local function Build(page)
 			Changed()
 		end)
 		b.mode, b.label = mode[1], mode[2]
-		b:SetPoint("TOPLEFT", 20 + (i - 1) * 124, -292)
+		b:SetPoint("TOPLEFT", 20 + (i - 1) * 124, -340)
 		page.modes[i] = b
 	end
 	page.swatches = {}
 	for i, c in ipairs(ns.PALETTE) do
 		local b = CreateFrame("Button", nil, page)
 		b:SetSize(34, 34)
-		b:SetPoint("TOPLEFT", 20 + (i - 1) * 42, -330)
+		b:SetPoint("TOPLEFT", 20 + (i - 1) * 42, -378)
 		b.ring = UI.Solid(b, "BACKGROUND", 1, 0.82, 0.25, 1)
 		b.ring:SetAllPoints()
 		local back = UI.Solid(b, "BORDER", 0.045, 0.055, 0.075, 1)
@@ -127,7 +134,7 @@ local function Build(page)
 		page.swatches[i] = b
 	end
 	page.legend = UI.Label(page, 12.5, 1, 1, 1)
-	page.legend:SetPoint("TOPLEFT", 20, -340)
+	page.legend:SetPoint("TOPLEFT", 20, -388)
 end
 
 local function Refresh(page)

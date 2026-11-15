@@ -70,8 +70,16 @@ step=L.eval('''function(ns)
   for _,c in ipairs(s.checks) do c._scripts.OnClick(c) c._scripts.OnClick(c) end
   for _,b in ipairs(s.sizes) do b._scripts.OnClick(b) end
   for _,b in ipairs(s.modes) do b._scripts.OnClick(b) end
-  local legend=s.legend._text
-  s.modes[1]._scripts.OnClick(s.modes[1]) for _,b in ipairs(s.swatches) do b._scripts.OnClick(b) end
+  local legend={}
+  for _,m in ipairs(s.modes) do m._scripts.OnClick(m) local n=0
+    for _,chip in ipairs(s.chips) do if chip._shown then n=n+1 chip._scripts.OnClick(chip) for _,b in ipairs(s.colors) do b._scripts.OnClick(b) end end end
+    legend[#legend+1]=ExplorersMapDB.colorMode..":"..n.." editing "..tostring(s.editing) end
+  local r,g,b=ns.PinColor({explored=true}) legend[#legend+1]=("found custom %.2f"):format(r)
+  for _,chip in ipairs(s.chips) do if chip._shown then chip._scripts.OnClick(chip) s.reset._scripts.OnClick(s.reset) end end
+  for _,m in ipairs({s.modes[2],s.modes[3]}) do m._scripts.OnClick(m) for _,chip in ipairs(s.chips) do if chip._shown then chip._scripts.OnClick(chip) s.reset._scripts.OnClick(s.reset) end end end
+  r,g,b=ns.PinColor({explored=true}) legend[#legend+1]=("found default %.2f"):format(r) legend[#legend+1]="custom left:"..(next(ExplorersMapDB.custom) and "some" or "none")
+  legend=table.concat(legend," | ")
+  s.modes[1]._scripts.OnClick(s.modes[1])
   local langs={} for _,b in ipairs(s.langs) do langs[#langs+1]=b._text b._scripts.OnClick(b) end
   local es=ns.Name(ns.byMap[1413].n) .. " / " .. ns.T("OVERALL") .. " / " .. ui.navs[1].text._text
   ui:ShowPage("progress")

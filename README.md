@@ -14,13 +14,13 @@ ExplorersMap knows every area that exploring reveals on each zone's map (569 are
 **Pins on the world map**
 - A pin on every area you have not discovered yet. Discover it and the pin goes away on its own.
 - Hover a pin for the area's name, its zone, its coordinates and the zone's progress.
-- Click a pin to draw a 10 m circle round the spot. The pin is a guide: allow a margin of about 7 to 10 m.
+- Click a pin to draw a 15 m circle round the spot. The pin is a guide: allow a margin of about 10 to 15 m.
 - Works on Blizzard's world map and on [OpenMap](https://github.com/openmap-world/openmap)'s stitched map, where every zone's pins show at once.
 
 **The window** (minimap button or `/emap`)
 - **Progress:** how much of the world you have explored, by continent and by zone. Pick a zone to see the areas still to discover and the ones already found; click any of them to open the map there. The window opens on the zone you are standing in.
 - **Guide:** the zones with areas left, sorted by how they suit your level and faction (explore now, with care, later), and the hardest and slowest zones to finish, with the reasons.
-- **Settings:** language, pins on or off, pins only for the zone or the continent you are in, discovered areas shown too (in green), pins hidden in dungeons and raids, pin size, the minimap button, discovery announcements, and pin colours (one colour, by region, or by the zone's risk at your level).
+- **Settings:** language, pins on or off, pins only for the zone or the continent you are in, discovered areas shown too (grey by default), pins hidden in dungeons and raids, pin size, the minimap button, discovery announcements, and pin colours (one colour, by region, or by the zone's risk at your level, each of them yours to change).
 
 **Discoveries**: the area's name shows on screen with the zone's count and your world percentage, and a line goes to chat.
 

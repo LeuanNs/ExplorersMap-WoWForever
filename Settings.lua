@@ -1,19 +1,27 @@
 -- ExplorersMap: the window's Settings page. Language (every language the Languages folder
 -- adds), the map pins (shown or not, only the zone or the continent the character is in, the
 -- discovered ones too, hidden in dungeons, the minimap button, the announcements),
--- their size, and their colours: one colour, by region, or by the zone's risk at your level.
+-- their size, and their colours: one colour, by region, or by the zone's risk at your level,
+-- each of them (and the discovered areas') any colour of a palette.
 
 local _, ns = ...
 local T = ns.T
 local UI = ns.UI
 
 local MODES = { { "single", "COLOR_SINGLE" }, { "region", "COLOR_REGION" }, { "level", "COLOR_LEVEL" } }
-local RISKS = { "LV_SAFE", "LV_OK", "LV_RISKY", "LV_DEADLY" }
-local REGIONS = { "KALIMDOR", "EK", "ISLANDS" }
-
-local function Hex(c)
-	return ("%02x%02x%02x"):format(math.floor(c[1] * 255 + 0.5), math.floor(c[2] * 255 + 0.5), math.floor(c[3] * 255 + 0.5))
-end
+-- the colours each mode has to choose ({ its key, its text }), the discovered areas' always last
+local KEYS = {
+	single = { { "single", "COLOR_PINS" } },
+	region = { { "region1", "KALIMDOR" }, { "region2", "EK" }, { "region3", "ISLANDS" } },
+	level = { { "risk1", "LV_SAFE" }, { "risk2", "LV_OK" }, { "risk3", "LV_RISKY" }, { "risk4", "LV_DEADLY" } },
+}
+local FOUND = { "found", "COLOR_FOUND" }
+local CHIPS = 5
+local COLORS = {
+	{ 0.45, 0.72, 1 }, { 0.25, 0.5, 1 }, { 0.3, 0.9, 0.9 }, { 0.4, 0.9, 0.45 }, { 0.7, 1, 0.3 }, { 1, 0.95, 0.4 },
+	{ 1, 0.82, 0.2 }, { 1, 0.6, 0.2 }, { 1, 0.3, 0.3 }, { 1, 0.5, 0.75 }, { 0.82, 0.55, 1 }, { 0.6, 0.4, 0.25 },
+	{ 1, 1, 1 }, { 0.62, 0.62, 0.62 }, { 0.35, 0.35, 0.35 },
+}
 
 local function Changed() ns.Notify("settings") end
 
@@ -110,31 +118,47 @@ local function Build(page)
 		b:SetPoint("TOPLEFT", 20 + (i - 1) * 124, -340)
 		page.modes[i] = b
 	end
-	page.swatches = {}
-	for i, c in ipairs(ns.PALETTE) do
-		local b = CreateFrame("Button", nil, page)
-		b:SetSize(34, 34)
-		b:SetPoint("TOPLEFT", 20 + (i - 1) * 42, -378)
-		b.ring = UI.Solid(b, "BACKGROUND", 1, 0.82, 0.25, 1)
-		b.ring:SetAllPoints()
-		local back = UI.Solid(b, "BORDER", 0.045, 0.055, 0.075, 1)
-		back:SetPoint("TOPLEFT", 2, -2)
-		back:SetPoint("BOTTOMRIGHT", -2, 2)
-		b.pin = b:CreateTexture(nil, "ARTWORK")
-		b.pin:SetSize(26, 26)
-		b.pin:SetPoint("CENTER")
-		ns.PinLook(b.pin, c[1], c[2], c[3])
-		local hover = UI.Solid(b, "HIGHLIGHT", 1, 1, 1, 0.12)
-		hover:SetAllPoints()
-		b.color = i
-		b:SetScript("OnClick", function(self)
-			ExplorersMapDB.color = self.color
+	-- each colour of the mode chosen, and the discovered areas': click one, then a colour for it
+	page.chips = {}
+	for i = 1, CHIPS do
+		local b = Choice(page, 140, function(self)
+			page.editing = self.key
 			Changed()
 		end)
-		page.swatches[i] = b
+		b:SetPoint("TOPLEFT", 20 + (i - 1) * 146, -372)
+		b.text:SetPoint("LEFT", 26, 0)
+		b.swatch = UI.Solid(b, "ARTWORK", 1, 1, 1, 1)
+		b.swatch:SetSize(12, 12)
+		b.swatch:SetPoint("LEFT", 8, 0)
+		page.chips[i] = b
 	end
-	page.legend = UI.Label(page, 12.5, 1, 1, 1)
-	page.legend:SetPoint("TOPLEFT", 20, -388)
+	page.colors = {}
+	for i, c in ipairs(COLORS) do
+		local b = CreateFrame("Button", nil, page)
+		b:SetSize(22, 22)
+		b:SetPoint("TOPLEFT", 20 + (i - 1) * 27, -404)
+		b.ring = UI.Solid(b, "BACKGROUND", 1, 1, 1, 1)
+		b.ring:SetAllPoints()
+		local fill = UI.Solid(b, "ARTWORK", c[1], c[2], c[3], 1)
+		fill:SetPoint("TOPLEFT", 2, -2)
+		fill:SetPoint("BOTTOMRIGHT", -2, 2)
+		local hover = UI.Solid(b, "HIGHLIGHT", 1, 1, 1, 0.25)
+		hover:SetAllPoints()
+		b.color = c
+		b:SetScript("OnClick", function(self)
+			if not page.editing then return end
+			ExplorersMapDB.custom[page.editing] = { self.color[1], self.color[2], self.color[3] }
+			Changed()
+		end)
+		page.colors[i] = b
+	end
+	page.reset = UI.TextButton(page, 110, 22, 11.5)
+	page.reset:SetPoint("TOPLEFT", 20 + #COLORS * 27 + 8, -404)
+	page.reset:SetScript("OnClick", function()
+		if not page.editing then return end
+		ExplorersMapDB.custom[page.editing] = nil
+		Changed()
+	end)
 end
 
 local function Refresh(page)
@@ -161,17 +185,30 @@ local function Refresh(page)
 		b:SetLabel(T(b.label))
 		b:SetChosen(mode == b.mode)
 	end
-	for i, b in ipairs(page.swatches) do
-		b:SetShown(mode == "single")
-		b.ring:SetShown((db.color or 1) == i)
+	local keys, n = KEYS[mode] or KEYS.single, 0
+	local editing
+	for i, b in ipairs(page.chips) do
+		local entry = keys[i] or (i == #keys + 1 and FOUND) or nil
+		b:SetShown(entry ~= nil)
+		if entry then
+			n = i
+			b.key = entry[1]
+			b:SetLabel(T(entry[2]))
+			local c = ns.ColorOf(b.key)
+			b.swatch:SetColorTexture(c[1], c[2], c[3], 1)
+			if b.key == page.editing then editing = b end
+		end
 	end
-	local parts = {}
-	if mode == "region" then
-		for i, key in ipairs(REGIONS) do parts[i] = ("|cff%s%s|r"):format(Hex(ns.REGION_COLORS[i]), T(key)) end
-	elseif mode == "level" then
-		for i, key in ipairs(RISKS) do parts[i] = ("|cff%s%s|r"):format(Hex(ns.RISK_COLORS[i]), T(key)) end
+	-- (the one being changed: the one clicked, or the mode's first)
+	editing = editing or page.chips[1]
+	page.editing = editing.key
+	for i = 1, n do page.chips[i]:SetChosen(page.chips[i] == editing) end
+	local now = ns.ColorOf(page.editing)
+	for _, b in ipairs(page.colors) do
+		local same = math.abs(b.color[1] - now[1]) + math.abs(b.color[2] - now[2]) + math.abs(b.color[3] - now[3]) < 0.02
+		b.ring:SetColorTexture(1, same and 0.82 or 1, same and 0.25 or 1, same and 1 or 0.12)
 	end
-	page.legend:SetText(table.concat(parts, "   ·   "))
+	page.reset:SetLabel(T("COLOR_RESET"))
 end
 
 UI.AddPage({ key = "settings", label = "NAV_SETTINGS", build = Build, refresh = Refresh })

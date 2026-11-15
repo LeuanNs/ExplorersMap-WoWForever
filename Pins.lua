@@ -11,9 +11,8 @@ local T = ns.T
 local SIZES = { 18, 24, 30 }    -- px on screen: small, medium, large
 local ATLAS, FALLBACK = "Waypoint-MapPin-Untracked", "Interface\\Minimap\\Ping\\ping5"
 local GOLD, GREEN = { 1, 0.82, 0.2 }, { 0.4, 0.95, 0.5 }
-local FOUND_ALPHA = 0.8         -- a discovered area's pin (green), when the settings show them
 local SEGMENTS = 48             -- the circle's
-local MIN_RING = 18             -- px on screen: the circle's radius at least (10 m is a pixel or two on a zone's map)
+local MIN_RING = 18             -- px on screen: the circle's radius at least (15 m is a pixel or two on a zone's map)
 
 local canvas, host, ring, driver
 local pool, active = {}, {}
@@ -215,16 +214,12 @@ local function Layout()
 						local b = tremove(pool) or NewPin()
 						local scale = size * (chosen and 1.3 or 1) / onScreen
 						b.piece = p
-						b.icon:SetAlpha(1)
 						if chosen then
 							local c = p.explored and GREEN or GOLD
 							b.icon:SetVertexColor(c[1], c[2], c[3])
 							local ok2, ex = pcall(place, zone, p.x + p.r, p.y)
 							local radius = ok2 and ex and math.abs(ex - cx) * width or 0
 							PlaceRing(cx, cy, math.max(radius, MIN_RING / onScreen), 2 / onScreen, c)
-						elseif p.explored then
-							b.icon:SetVertexColor(GREEN[1], GREEN[2], GREEN[3])
-							b.icon:SetAlpha(FOUND_ALPHA)
 						else
 							b.icon:SetVertexColor(ns.PinColor(p))
 						end

@@ -18,7 +18,8 @@ ns.PALETTE = { { 0.45, 0.72, 1 }, { 1, 0.82, 0.2 }, { 0.5, 0.95, 0.4 }, { 1, 0.3
 ns.REGION_COLORS = { { 1, 0.6, 0.2 }, { 0.45, 0.72, 1 }, { 0.82, 0.55, 1 } }                 -- Kalimdor, Eastern Kingdoms, islands
 ns.RISK_COLORS = { { 0.4, 0.9, 0.45 }, { 1, 0.85, 0.25 }, { 1, 0.55, 0.2 }, { 1, 0.3, 0.3 } }  -- safe, your level, risky, deadly
 local TOLERANCE = 3             -- px: the two arts of a zone place the same piece a pixel or two apart
-local RADIUS_YARDS = 10.94      -- the circle round a chosen area: 10 m
+local RADIUS_YARDS = 16.4       -- the circle round a chosen area: 15 m
+ns.FOUND_COLOR = { 0.62, 0.62, 0.62 }                                                          -- a discovered area's pin
 
 function ns.Listen(fn) ns.listeners[#ns.listeners + 1] = fn end
 
@@ -76,15 +77,34 @@ function ns.Risk(zone)
 	return 4
 end
 
+-- the colours the pins take, each under a key: "single", "region1".."region3" (Kalimdor, Eastern
+-- Kingdoms, islands), "risk1".."risk4" (safe .. deadly), "found". The settings may change any
+function ns.DefaultColor(key)
+	if key == "found" then return ns.FOUND_COLOR end
+	local kind, i = tostring(key):match("^(%a+)(%d)$")
+	local c = (kind == "region" and ns.REGION_COLORS[tonumber(i)]) or (kind == "risk" and ns.RISK_COLORS[tonumber(i)])
+	return c or ns.PALETTE[ExplorersMapDB.color] or ns.PALETTE[1]
+end
+
+function ns.ColorOf(key)
+	local custom = ExplorersMapDB.custom
+	local c = type(custom) == "table" and custom[key]
+	if type(c) == "table" and tonumber(c[1]) and tonumber(c[2]) and tonumber(c[3]) then return c end
+	return ns.DefaultColor(key)
+end
+
 -- a pin's colour, as the settings say: one colour, by region, or by the zone's risk at your level
+-- (a discovered area's, when they show: its own)
 function ns.PinColor(piece)
-	local db, c = ExplorersMapDB, nil
-	if db.colorMode == "region" then
-		c = ns.REGION_COLORS[piece.zone.c]
-	elseif db.colorMode == "level" then
-		c = ns.RISK_COLORS[ns.Risk(piece.zone)]
+	local mode, key = ExplorersMapDB.colorMode, "single"
+	if piece.explored then
+		key = "found"
+	elseif mode == "region" then
+		key = "region" .. tostring(piece.zone.c)
+	elseif mode == "level" then
+		key = "risk" .. ns.Risk(piece.zone)
 	end
-	c = c or ns.PALETTE[db.color] or ns.PALETTE[1]
+	local c = ns.ColorOf(key)
 	return c[1], c[2], c[3]
 end
 
@@ -301,6 +321,7 @@ events:SetScript("OnEvent", function(_, event, arg)
 		ExplorersMapDB = type(ExplorersMapDB) == "table" and ExplorersMapDB or {}
 		for k, v in pairs(DEFAULTS) do if ExplorersMapDB[k] == nil then ExplorersMapDB[k] = v end end
 		if not ns.languages[ExplorersMapDB.lang] then ExplorersMapDB.lang = "eng" end
+		if type(ExplorersMapDB.custom) ~= "table" then ExplorersMapDB.custom = {} end
 	elseif event == "PLAYER_LOGIN" then
 		local ok, err = pcall(Build)
 		if not ok and geterrorhandler then geterrorhandler()(err) end

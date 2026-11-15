@@ -8,12 +8,16 @@
 local _, ns = ...
 local T = ns.T
 
-local SIZE = 56                 -- px: the arrow's box
+local SIZE = 64                 -- px: the arrow's box
 local NEAR, FAR = 150, 500      -- metres: green up to NEAR, yellow up to FAR, red past it
 local COLORS = { { 0.35, 0.95, 0.45 }, { 1, 0.85, 0.25 }, { 1, 0.3, 0.3 } }
 local METRES = 0.9144           -- a yard
--- the arrow's strokes, pointing up, in shares of half its box: x1, y1, x2, y2
-local STROKES = { { 0, -0.9, 0, 0.9 }, { -0.55, 0.3, 0, 0.95 }, { 0.55, 0.3, 0, 0.95 } }
+-- the arrow, pointing up, in shares of half its box: a dart of two faces (the left one lit, the
+-- right one in shade) over a darker copy of itself a little lower, its side, for some body
+local TIP, NOTCH, LEFT, RIGHT = { 0, 1 }, { 0, -0.38 }, { -0.74, -0.86 }, { 0.74, -0.86 }
+local FAN, THICK = 10, 6.5      -- each face: lines from its wing to the middle, this thick (px)
+local DROP = 5                  -- px: how far down the side goes
+local LIT, SHADE, SIDE, SHINE = 1, 0.62, 0.32, 1.4
 
 local arrow, driver, target, home
 local sinceTarget, sinceDraw = 1, 1
@@ -142,36 +146,59 @@ local function Build()
 	else
 		arrow:SetPoint("TOP", UIParent, "TOP", 0, -46)
 	end
-	-- (each stroke twice: a dark edge under the colour)
-	arrow.edges, arrow.lines = {}, {}
+	-- the lines it's drawn with: { line, x1, y1, x2, y2 (px, pointing up), drop (px), light (nil: black) }
+	arrow.strokes = {}
 	if arrow.CreateLine then
-		for i = 1, #STROKES do
-			arrow.edges[i] = arrow:CreateLine(nil, "BORDER")
-			arrow.edges[i]:SetColorTexture(0, 0, 0, 0.85)
-			arrow.edges[i]:SetThickness(10)
-			arrow.lines[i] = arrow:CreateLine(nil, "ARTWORK")
-			arrow.lines[i]:SetThickness(5.5)
+		local half = SIZE / 2
+		local function Mix(a, b, t) return { a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t } end
+		local function Stroke(layer, level, a, b, thick, drop, light)
+			local line = arrow:CreateLine(nil, layer, nil, level)
+			line:SetThickness(thick)
+			if not light then line:SetColorTexture(0, 0, 0, 1) end
+			arrow.strokes[#arrow.strokes + 1] = { line, a[1] * half, a[2] * half, b[1] * half, b[2] * half, drop, light }
 		end
+		local function Faces(layer, drop, left, right)
+			for side = 1, 2 do
+				local wing = side == 1 and LEFT or RIGHT
+				local centre = { (TIP[1] + NOTCH[1] + wing[1]) / 3, (TIP[2] + NOTCH[2] + wing[2]) / 3 }
+				local out = Mix(wing, centre, 0.22)
+				for i = 1, FAN do
+					local from = Mix(TIP, NOTCH, 0.17 + 0.72 * (i - 1) / (FAN - 1))
+					-- (a line's end is square: start it a little inside its own face)
+					local length = math.sqrt(((out[1] - from[1]) * half) ^ 2 + ((out[2] - from[2]) * half) ^ 2)
+					from = Mix(from, out, math.min(0.5, THICK * 0.35 / length))
+					Stroke(layer, 0, from, out, THICK, drop, side == 1 and left or right)
+				end
+			end
+		end
+		local function Edge(layer, level, thick, drop)
+			Stroke(layer, level, TIP, RIGHT, thick, drop)
+			Stroke(layer, level, RIGHT, NOTCH, thick, drop)
+			Stroke(layer, level, NOTCH, LEFT, thick, drop)
+			Stroke(layer, level, LEFT, TIP, thick, drop)
+		end
+		Faces("BACKGROUND", DROP, SIDE, SIDE)
+		Edge("BORDER", 0, 4, DROP)
+		Faces("ARTWORK", 0, LIT, SHADE)
+		Stroke("ARTWORK", 1, Mix(TIP, NOTCH, 0.1), Mix(TIP, NOTCH, 0.95), 5, 0, LIT)       -- closes the seam
+		Stroke("ARTWORK", 2, Mix(TIP, NOTCH, 0.1), Mix(TIP, NOTCH, 0.94), 1.6, 0, SHINE)   -- the ridge's shine
+		Edge("OVERLAY", 0, 3.2, 0)
 	end
 	arrow.text = arrow:CreateFontString(nil, "OVERLAY")
 	arrow.text:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
-	arrow.text:SetPoint("TOP", arrow, "BOTTOM", 0, -2)
+	arrow.text:SetPoint("TOP", arrow, "BOTTOM", 0, -6)
 	arrow:Hide()
 end
 
 -- the arrow turned `angle` (radians, anticlockwise from straight up), in a colour
 local function Paint(angle, c)
-	local cos, sin, half = math.cos(angle), math.sin(angle), SIZE / 2
-	for i, s in ipairs(STROKES) do
-		local x1, y1 = (s[1] * cos - s[2] * sin) * half, (s[1] * sin + s[2] * cos) * half
-		local x2, y2 = (s[3] * cos - s[4] * sin) * half, (s[3] * sin + s[4] * cos) * half
-		local edge, line = arrow.edges[i], arrow.lines[i]
-		if line then
-			edge:SetStartPoint("CENTER", arrow, x1, y1)
-			edge:SetEndPoint("CENTER", arrow, x2, y2)
-			line:SetStartPoint("CENTER", arrow, x1, y1)
-			line:SetEndPoint("CENTER", arrow, x2, y2)
-			line:SetColorTexture(c[1], c[2], c[3], 1)
+	local cos, sin = math.cos(angle), math.sin(angle)
+	for _, s in ipairs(arrow.strokes) do
+		local line, drop, light = s[1], s[6], s[7]
+		line:SetStartPoint("CENTER", arrow, s[2] * cos - s[3] * sin, s[2] * sin + s[3] * cos - drop)
+		line:SetEndPoint("CENTER", arrow, s[4] * cos - s[5] * sin, s[4] * sin + s[5] * cos - drop)
+		if light then
+			line:SetColorTexture(math.min(1, c[1] * light), math.min(1, c[2] * light), math.min(1, c[3] * light), 1)
 		end
 	end
 	arrow.text:SetTextColor(c[1], c[2], c[3])

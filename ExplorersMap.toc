@@ -28,3 +28,4 @@ Minimap.lua
 UI.lua
 Guide.lua
 Settings.lua
+Arrow.lua

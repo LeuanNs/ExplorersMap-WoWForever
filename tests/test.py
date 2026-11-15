@@ -129,3 +129,35 @@ mm=L.eval('''function(ns) local b=ExplorersMapMinimapButton b._scripts.OnEnter(b
   return ExplorersMapDB.angle, ExplorersMapDB.lang, ns.T('MARGIN_SHORT') end''')
 print('minimap',mm(ns))
 print('tips',[str(x) for x in L.eval('MOCK.log').values() if str(x).startswith('tip')][:14])
+
+# the guide arrow: the character at the middle of the Barrens, facing north
+arrow=L.eval('''function(ns)
+  C_Map.GetPlayerMapPosition=function(id,unit) return { GetXY=function() return 0.5,0.5 end } end
+  GetPlayerFacing=function() return 0 end
+  local out={}
+  SlashCmdList.EXPLORERSMAP("arrow")
+  local drv for _,w in ipairs(MOCK.widgets) do if w._kind=="Frame" and not w._parent and w._scripts.OnUpdate and not w._scripts.OnEvent and w~=ExplorersMapFrame then drv=w end end
+  local a=ExplorersMapArrow
+  drv._scripts.OnUpdate(drv,0.6)
+  out[#out+1]="on="..tostring(ExplorersMapDB.guideArrow).." shown="..tostring(a._shown).." text="..tostring(a.text._text)
+  a._scripts.OnEnter(a) a._scripts.OnDragStart(a) a._scripts.OnDragStop(a)
+  -- a chosen area of this zone wins
+  local far for _,p in ipairs(ns.byMap[1413].pieces) do if not p.explored and p.y>0.9 then far=p end end
+  ns.Select(far) drv._scripts.OnUpdate(drv,0.6) out[#out+1]="chosen: "..tostring(a.text._text) ns.Select(nil)
+  -- the zone all explored: on to another zone of the continent (here, by the zones' places on its map)
+  local left={} for _,p in ipairs(ns.byMap[1413].pieces) do if not p.explored then left[#left+1]=p p.explored=true end end
+  MOCK.maps[1413].parentMapID=1414 MOCK.maps[1440].parentMapID=1414 MOCK.maps[1429].parentMapID=1415 MOCK.maps[1415]={mapType=2,name="EK"}
+  C_Map.GetMapRectOnMap=function(a,b) if a==1440 then return 0.5,0.7,0.1,0.3 end return 0.2,0.4,0.3,0.5 end
+  for _,z in ipairs(ns.zones) do z.lie=nil end
+  drv._scripts.OnUpdate(drv,0.6) out[#out+1]="zone done: "..tostring(a.text._text).." shown="..tostring(a._shown)
+  local world=C_Map.GetWorldPosFromMapPos C_Map.GetWorldPosFromMapPos=function() return nil end
+  for _,z in ipairs(ns.zones) do z.lie=nil end
+  drv._scripts.OnUpdate(drv,0.6) out[#out+1]="by continent map: "..tostring(a.text._text).." shown="..tostring(a._shown)
+  C_Map.GetWorldPosFromMapPos=world for _,z in ipairs(ns.zones) do z.lie=nil end
+  for _,p in ipairs(left) do p.explored=false end
+  -- nowhere known: hidden
+  C_Map.GetPlayerMapPosition=function() return nil end drv._scripts.OnUpdate(drv,0.6) out[#out+1]="no position shown="..tostring(a._shown)
+  SlashCmdList.EXPLORERSMAP("arrow") out[#out+1]="off shown="..tostring(a._shown).." driver="..tostring(drv._shown)
+  return table.concat(out," | ")
+end''')
+print('arrow',arrow(ns))

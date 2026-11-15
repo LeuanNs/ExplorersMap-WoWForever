@@ -1,7 +1,7 @@
 -- ExplorersMap: which pieces of each zone's map the character has discovered.
 -- The game tells which map pieces are explored (C_MapExplorationInfo.GetExploredMapTextures);
 -- Data.lua lists every piece there is, so the rest are the ones still to find.
---   ns.zones[i] = { mapID, maps, c (continent), n (name index), pieces, total, done }
+--   ns.zones[i] = { mapID, maps, c (continent), n (name index), pieces, total, done, width, height (yards) }
 --   piece = { zone, n (name index), x, y (on the zone's map, 0..1), r (radius, share of the map's width),
 --             ox, oy (the piece's corner on the map art), explored }
 
@@ -13,7 +13,7 @@ ns.total, ns.done = 0, 0
 local T = ns.T
 
 local DEFAULTS = { lang = "eng", pins = true, zoneOnly = false, minimap = true, angle = 215, sort = 1, announce = true,
-	colorMode = "single", color = 1, size = 2, continentOnly = false, showFound = false, hideDungeons = false }
+	colorMode = "single", color = 1, size = 2, continentOnly = false, showFound = false, hideDungeons = false, guideArrow = false }
 ns.PALETTE = { { 0.45, 0.72, 1 }, { 1, 0.82, 0.2 }, { 0.5, 0.95, 0.4 }, { 1, 0.38, 0.32 }, { 0.82, 0.55, 1 }, { 1, 0.6, 0.2 }, { 1, 1, 1 } }
 ns.REGION_COLORS = { { 1, 0.6, 0.2 }, { 0.45, 0.72, 1 }, { 0.82, 0.55, 1 } }                 -- Kalimdor, Eastern Kingdoms, islands
 ns.RISK_COLORS = { { 0.4, 0.9, 0.45 }, { 1, 0.85, 0.25 }, { 1, 0.55, 0.2 }, { 1, 0.3, 0.3 } }  -- safe, your level, risky, deadly
@@ -150,8 +150,10 @@ local function Build()
 			primary = primary or maps[1]
 			if #z.a < 2 then variant = nil else variant = variant or "n" end
 			local W, H = ArtSize(primary)
-			local radius = RADIUS_YARDS / (WidthYards(primary) or 4500)
-			local zone = { mapID = primary, maps = maps, c = z.c, n = z.n, pieces = {}, total = 0, done = 0 }
+			local yards = WidthYards(primary) or 4500
+			local radius = RADIUS_YARDS / yards
+			local zone = { mapID = primary, maps = maps, c = z.c, n = z.n, pieces = {}, total = 0, done = 0,
+				width = yards, height = yards * H / W }
 			for entry in z.p:gmatch("[^;]+") do
 				local x, y, w, h, n, flag = strsplit(",", entry)
 				if not flag or not variant or flag == variant then
@@ -348,6 +350,9 @@ SlashCmdList["EXPLORERSMAP"] = function(msg)
 	if msg == "pins" or msg == "pines" then
 		ns.SetPins(not ExplorersMapDB.pins)
 		ns.Print(T(ExplorersMapDB.pins and "PINS_ON" or "PINS_OFF"))
+	elseif msg == "arrow" or msg == "flecha" then
+		if ns.SetArrow then ns.SetArrow(not ExplorersMapDB.guideArrow) end
+		ns.Print(T(ExplorersMapDB.guideArrow and "ARROW_ON" or "ARROW_OFF"))
 	elseif msg == "help" or msg == "ayuda" or msg == "?" then
 		ns.Print(T("HELP"))
 	elseif ns.ToggleWindow then

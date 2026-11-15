@@ -1,6 +1,6 @@
 -- ExplorersMap: the window's Settings page. Language (every language the Languages folder
 -- adds), the map pins (shown or not, only the zone or the continent the character is in, the
--- discovered ones too, hidden in dungeons, the minimap button, the announcements),
+-- discovered ones too, hidden in dungeons, the minimap button, the announcements, the guide arrow),
 -- their size, and their colours: one colour, by region, or by the zone's risk at your level,
 -- each of them (and the discovered areas') any colour of a palette.
 
@@ -86,6 +86,8 @@ local function Build(page)
 		function(on) ExplorersMapDB.showFound = on end)
 	Box("OPT_DUNGEONS", 490, -180, 268, function() return ExplorersMapDB.hideDungeons end,
 		function(on) ExplorersMapDB.hideDungeons = on end)
+	Box("OPT_ARROW", 490, -204, 268, function() return ExplorersMapDB.guideArrow end,
+		function(on) ExplorersMapDB.guideArrow = on end)
 	Box("OPT_MINIMAP", 490, -132, 268, function() return ExplorersMapDB.minimap ~= false end, function(on)
 		ExplorersMapDB.minimap = on
 		if ns.RefreshMinimapButton then ns.RefreshMinimapButton() end

@@ -3,6 +3,7 @@
 ## Notes: A pin on every area you still have to discover, zone by zone, your exploration of all Azeroth at a glance, and a guide to what to explore at your level. /emap
 ## Notes-esES: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
 ## Notes-esMX: Un pin en cada zona que te falta descubrir, tu progreso de exploración de todo Azeroth y una guía de qué explorar según tu nivel. /emap
+## Notes-deDE: Eine Markierung auf jedem Gebiet, das du noch entdecken musst, Zone für Zone, deine Erkundung ganz Azeroths auf einen Blick und ein Leitfaden, was du auf deiner Stufe erkunden kannst. /emap
 ## Version: 1.2.0
 ## SavedVariables: ExplorersMapDB
 ## OptionalDeps: OpenMap
@@ -16,6 +17,7 @@ Locales.lua
 # or add a file of your own to the folder and its name to this list.
 Languages\eng.lua
 Languages\esp.lua
+Languages\deu.lua
 Languages\custom1.lua
 Languages\custom2.lua
 Languages\custom3.lua
